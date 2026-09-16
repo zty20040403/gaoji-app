@@ -20,7 +20,9 @@ async function main() {
   function asset(name) {
     const found = release.assets.find(value => value.name === name && value.state === 'uploaded');
     const url = `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`;
-    if (found?.browser_download_url !== url) throw Error('Unexpected download target');
+    if (!found || !Number.isSafeInteger(found.id)
+        || found.url !== `https://api.github.com/repos/${repository}/releases/assets/${found.id}`
+        || !release.draft && found.browser_download_url !== url) throw Error('Unexpected download target');
     return found;
   }
   async function downloadAsset(remote, timeout = 300000) {
