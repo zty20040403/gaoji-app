@@ -23,6 +23,13 @@ async function main() {
     const info = await page.evaluate(() => window.gaojiDesktop.info());
     assert.equal(info.ok, true);
     assert.equal(info.data.runtimeAvailable, true);
+    const local = await page.evaluate(() => window.gaojiDesktop.localInspect());
+    assert.equal(local.ok, true, 'Windows local prerequisites could not be inspected');
+    assert.equal(local.data.platform, 'win32');
+    assert.equal(local.data.recorded, false);
+    assert.ok(Number.isFinite(local.data.freeBytes) && local.data.freeBytes > 0);
+    assert.ok(Array.isArray(local.data.blockers));
+    if (!local.data.ready) assert.ok(local.data.blockers.length > 0, 'Missing prerequisites must explain the blocker');
     credentialId = await app.evaluate(({ app, safeStorage }) => {
       const assert = process.getBuiltinModule('assert').strict;
       const fs = process.getBuiltinModule('fs');
@@ -77,6 +84,7 @@ async function main() {
       windowsRelease: os.release(), version, installedExecutable: executable, portableExecutable: portable,
       unicodePaths: true, credentialEncryption: true, credentialReloadAfterRestart: true, actualUpdateCheck: true,
       publishedVersion: update.data.targetVersion, updatePhase: update.data.phase,
+      localPrerequisiteInspection: { checked: true, ready: local.data.ready, blockers: local.data.blockers, freeBytes: local.data.freeBytes },
       portableLaunch: true, h310Accessed: false, qqLoggedIn: false, windowsLocalDockerDeploymentTested: false }, null, 2));
     console.log('Windows installed/portable execution, Unicode paths, DPAPI persistence and actual update lookup passed');
   } finally { await app?.close(); fs.rmSync(directory, { recursive: true, force: true }); }
