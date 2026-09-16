@@ -88,6 +88,18 @@ async function main() {
     await page.getByRole('button', { name: '取消置顶 测试环境', exact: true }).waitFor();
     assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
     assert.equal(await page.locator('html').getAttribute('data-palette'), 'blossom');
+    await page.getByRole('button', { name: '外观设置' }).click();
+    await page.getByRole('radio', { name: '跟随系统', exact: true }).click();
+    await page.keyboard.press('Escape');
+    for (const colorScheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme });
+      await page.waitForFunction(mode => document.documentElement.dataset.theme === mode, colorScheme);
+    }
+    await page.reload();
+    await page.getByRole('button', { name: '外观设置' }).click();
+    assert.equal(await page.getByRole('radio', { name: '跟随系统', exact: true }).getAttribute('aria-checked'), 'true');
+    await page.getByRole('radio', { name: '深色', exact: true }).click();
+    await page.keyboard.press('Escape');
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });
@@ -99,7 +111,7 @@ async function main() {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(output, 'connect-mobile.png'), fullPage: true });
     assert.deepEqual(errors, []);
-    console.log('Workspace passed: search, pin persistence, filters, allowlisted diagnostic download, four palettes with both light/dark modes, appearance persistence, desktop/mobile layout, password masking. Only synthetic local fixtures.');
+    console.log('Workspace passed: search, pin persistence, filters, allowlisted diagnostic download, four palettes with both light/dark modes, system appearance changes and persistence, desktop/mobile layout, password masking. Only synthetic local fixtures.');
   } finally {
     if (app) await app.close();
     fs.rmSync(temporary, { recursive: true, force: true });
